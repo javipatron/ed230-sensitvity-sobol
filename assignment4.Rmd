@@ -16,6 +16,7 @@ library(sensitivity)
 library(tidyverse)
 library(lhs)
 library(purrr)
+library(kableExtra)
 
 ```
 
@@ -29,11 +30,9 @@ The function Catm.R is provided So that you know what it does - here's some back
 
 $$
 \text{Cat} = \frac{v}{6.25 \ln \left( \frac{z_m - z_d}{z_0} \right)^2}
-$$
-$${z_d} =k_d \cdot h$$
+$$ $${z_d} =k_d \cdot h$$
 
 $${z_d} =k_0 \cdot h$$
-
 
 -   zm = is the height at which windspeed is measured - must be higher than the vegetation (cm), it is usually measured 200 cm above the vegetation
 
@@ -133,6 +132,7 @@ ggplot(tmp, aes(Ca, value, fill = Ca)) +
 ```
 
 d)  Plot conductance estimates against each of your parameters
+
 ```{r}
 # Doing the pivot longer for the all atmospheric parameters data frame
 tmp2 = all_atm %>% gather(Ca, value= "atm_value", key= "atm_con")
@@ -170,22 +170,40 @@ ggplot(tmp3, aes(parmvalue, atm_value, color = parm)) +
 e)  Estimate the Partial Rank Correlation Coefficients
 
 ```{r}
-senresult = pcc(X1, atmospheric_new)
 
-# see coefficients
-senresult
-# efficiently plot them
-plot(senresult)
+senresult_rank = pcc(X1, atmospheric_new, rank = TRUE)
+final_results <- as.data.frame(senresult_rank$PRCC)
 
-# try again using rank coefficients
-senresult_rank = pcc(X1, atmospheric_new, rank = TRUE )
-senresult_rank
-plot(senresult_rank)
+# extract the values from the pcc_table object
+v <- final_results$original[1]
+height <- final_results$original[2]
+k_d <- final_results$original[3]
+k_o <- final_results$original[4]
 
-# R sometimes returns complex lists - to see what you have
-str(senresult)
+# create the data frame
+final_df <- data.frame(parameter = c("v", "height", "k_d", "k_o"),
+                 importance = c(v, height, k_d, k_o))
 
-senresult_rank$PRCC
+
+# Create the ggplot object
+ggplot(final_df, aes(x = parameter, y = importance, fill = parameter)) +
+  geom_bar(stat = "identity", alpha = 0.75) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "Relative Importance of Model Parameters",
+       x = "Parameter",
+       y = "Importance",
+       fill = "Parameter") +
+  theme_minimal()
+
+
+
+kable(final_results, 
+      caption = "Partial Rank Correlation Coefficients", 
+      align = "c", 
+      digits = 5) %>%
+    kable_styling(full_width = F, position = "center", 
+                bootstrap_options = "striped", 
+                font_size = 16)
 ```
 
 f)  Discuss what your results tell you about how aerodynamic conductance? What does it suggest about what you should focus on if you want to reduce uncertainty in aerodymaic conductance estimates? Does this tell you anything about the sensitivity of plant water use to climate change?
@@ -194,11 +212,16 @@ The sensitivity analysis show that aerodynamic conductance is most sensitive to 
 
 Submit the Rmarkdown (or link to git repo) as usual
 
-Grading Rubric
+*Grading Rubric*
 
-• Generation of parameter values using latin hypercube sampling (10pts) 
-• Running model for the parameters (10pts)
-• Graph of conductance uncertainty -- meaningful graph (5pts) -- graphing style (axis labels, legibility) (5 pts) 
-• Graph of conductance against parameter values -- meaningful graph (5pts) -- graphing style (axis labels, legibility) (5 pts) 
-• Correct Rank Correlation Coefficients (10 pts)
-• Discussion (10pts) -- suggestion for how to reduce uncertainty that follows from your analysis (5pts) -- idea about how uncertainty might impact estimate of plant water use under climate change (5pts)
+*• Generation of parameter values using latin hypercube sampling (10pts)*
+
+*• Running model for the parameters (10pts)*
+
+*• Graph of conductance uncertainty -- meaningful graph (5pts) -- graphing style (axis labels, legibility) (5 pts)*
+
+*• Graph of conductance against parameter values -- meaningful graph (5pts) -- graphing style (axis labels, legibility) (5 pts)*
+
+*• Correct Rank Correlation Coefficients (10 pts)*
+
+*• Discussion (10pts) -- suggestion for how to reduce uncertainty that follows from your analysis (5pts) -- idea about how uncertainty might impact estimate of plant water use under climate change (5pts)*
